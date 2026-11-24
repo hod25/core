@@ -187,6 +187,10 @@ class ToolResult:
 
     data: JsonObjectType
     error: bool = False
+    # MCP content blocks (text, image, audio, resource...) of the result. Set by
+    # tools that proxy an MCP server, so the MCP Server integration can return
+    # them as-is instead of serializing ``data`` to a single text block.
+    content: list[JsonObjectType] | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

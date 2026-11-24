@@ -229,6 +229,12 @@ async def create_server(
                 ],
                 is_error=True,
             )
+        if tool_response.content is not None:
+            # Content blocks from a proxied MCP server are returned as-is so
+            # images, audio and resources reach the client in their own type.
+            return types.CallToolResult.model_validate(
+                {"content": tool_response.content, "isError": tool_response.error}
+            )
         return types.CallToolResult(
             content=[
                 types.TextContent(

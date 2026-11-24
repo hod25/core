@@ -1222,6 +1222,45 @@ async def test_mcp_tool_call_error_flag(
     assert result.content[0].text == json.dumps(tool_result.data)
 
 
+@pytest.mark.parametrize("llm_hass_api", [llm.LLM_API_ASSIST])
+@pytest.mark.parametrize("is_error", [False, True])
+async def test_mcp_tool_call_passes_through_content(
+    hass: HomeAssistant,
+    setup_integration: None,
+    mcp_url: str,
+    mcp_client: Any,
+    hass_supervisor_access_token: str,
+    is_error: bool,
+) -> None:
+    """Test content blocks from a proxied MCP tool are returned unchanged."""
+    content: list[JsonObjectType] = [
+        {"type": "text", "text": "Front door snapshot"},
+        {"type": "image", "data": "aW1hZ2U=", "mimeType": "image/jpeg"},
+    ]
+    mock_api = AsyncMock()
+    mock_api.api.name = "Assist"
+    mock_api.tools = []
+    mock_api.custom_serializer = None
+    mock_api.async_call_tool.return_value = llm.ToolResult(
+        data={"content": content}, error=is_error, content=content
+    )
+
+    with patch(
+        "homeassistant.helpers.llm.async_get_api", new_callable=AsyncMock
+    ) as mock_get_api:
+        mock_get_api.return_value = mock_api
+        async with mcp_client(hass, mcp_url, hass_supervisor_access_token) as session:
+            result = await session.call_tool(name="AnyTool", arguments={})
+
+    assert result.is_error == is_error
+    assert len(result.content) == 2
+    assert result.content[0].type == "text"
+    assert result.content[0].text == "Front door snapshot"
+    assert result.content[1].type == "image"
+    assert result.content[1].data == "aW1hZ2U="
+    assert result.content[1].mime_type == "image/jpeg"
+
+
 async def test_streamable_api_id_exposes_registered_api(
     hass: HomeAssistant,
     setup_integration: None,

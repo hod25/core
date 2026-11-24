@@ -33,6 +33,7 @@ from homeassistant.exceptions import (
 from homeassistant.helpers import llm
 from homeassistant.helpers.httpx_client import SERVER_SOFTWARE, USER_AGENT
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util.json import JsonObjectType
 from homeassistant.util.ssl import SSL_ALPN_HTTP11, SSLCipherList, client_context
 
 from .auth import AuthenticateHeader
@@ -258,11 +259,11 @@ class ModelContextProtocolTool(llm.Tool):
             raise HomeAssistantError(
                 f"Error communicating with MCP server when calling tool: {error}"
             ) from error
+        data = result.model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
         return llm.ToolResult(
-            data=result.model_dump(
-                by_alias=True, exclude_unset=True, exclude_none=True
-            ),
+            data=data,
             error=bool(result.is_error),
+            content=cast(list[JsonObjectType], data["content"]),
         )
 
 

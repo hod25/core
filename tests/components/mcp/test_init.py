@@ -12,6 +12,7 @@ import httpx2
 from mcp.types import (
     CallToolResult,
     ErrorData,
+    ImageContent,
     Implementation,
     InitializeResult,
     ListToolsResult,
@@ -633,7 +634,8 @@ async def test_llm_tool_annotations(
             llm.ToolResult(
                 data={
                     "content": [{"text": "User was born in February", "type": "text"}]
-                }
+                },
+                content=[{"text": "User was born in February", "type": "text"}],
             ),
             id="success",
         ),
@@ -648,8 +650,27 @@ async def test_llm_tool_annotations(
                     "isError": True,
                 },
                 error=True,
+                content=[{"text": "Memory search failed", "type": "text"}],
             ),
             id="error",
+        ),
+        pytest.param(
+            CallToolResult(
+                content=[
+                    ImageContent(type="image", data="aW1hZ2U=", mimeType="image/png")
+                ]
+            ),
+            llm.ToolResult(
+                data={
+                    "content": [
+                        {"type": "image", "data": "aW1hZ2U=", "mimeType": "image/png"}
+                    ]
+                },
+                content=[
+                    {"type": "image", "data": "aW1hZ2U=", "mimeType": "image/png"}
+                ],
+            ),
+            id="image",
         ),
     ],
 )
